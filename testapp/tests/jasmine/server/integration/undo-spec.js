@@ -118,3 +118,29 @@ describe('undo after multiple actions on a single doc field', function () {
   });
 
 });
+
+describe('insert and update a doc in separate transactions, then undo both', function () {
+
+  beforeEach(function () {
+    // Fake userId to get through tx userId checks
+    spyOn(Meteor,'userId').and.returnValue('or6YSgs6nT8Bs5o6p');
+  });
+
+  afterEach(function () {
+    fooCollection.remove({});
+    tx.Transactions.remove({});
+  });
+
+  it('should remove the document', function () {
+   tx.start();
+   fooCollection.insert({_id: "myId", foo: "foo"});
+   tx.commit();
+   tx.start();
+   fooCollection.update("myId", {$set: {foo: "foo2"}}, {tx: true});
+   tx.commit();
+   tx.undo();
+   tx.undo();
+   expect(fooCollection.findOne("myId")).toBeUndefined();
+  });
+
+});
